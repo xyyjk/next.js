@@ -200,7 +200,6 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
       new webpack.IgnorePlugin(/(precomputed)/, /node_modules.+(elliptic)/),
       dev && new webpack.NoEmitOnErrorsPlugin(),
       dev && !isServer && new FriendlyErrorsWebpackPlugin(),
-      dev && new webpack.NamedModulesPlugin(),
       dev && !isServer && new webpack.HotModuleReplacementPlugin(), // Hot module replacement
       dev && new UnlinkFilePlugin(),
       dev && new CaseSensitivePathPlugin(), // Since on macOS the filesystem is case-insensitive this will make sure your path are case-sensitive
@@ -226,7 +225,6 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
       //   input: ['manifest.js', 'react.js', 'commons.js', 'main.js'],
       //   output: 'app.js'
       // }),
-      !dev && new webpack.optimize.ModuleConcatenationPlugin(),
       // !isServer && new PagesPlugin(),
       !isServer && new DynamicChunksPlugin(),
       isServer && new NextJsSsrImportPlugin({ dir, dist: config.distDir })
