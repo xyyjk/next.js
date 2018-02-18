@@ -31,7 +31,7 @@ module.exports = function (content, sourceMap) {
 const nextPagesDir = resolve(__dirname, '..', '..', '..', 'pages')
 
 function getRoute (loaderContext) {
-  const pagesDir = resolve(loaderContext.options.context, 'pages')
+  const pagesDir = resolve(loaderContext.rootContext, 'pages')
   const { resourcePath } = loaderContext
   const dir = [pagesDir, nextPagesDir]
   .find((d) => resourcePath.indexOf(d) === 0)
