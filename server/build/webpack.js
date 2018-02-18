@@ -228,7 +228,12 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
       // !isServer && new PagesPlugin(),
       !isServer && new DynamicChunksPlugin(),
       isServer && new NextJsSsrImportPlugin({ dir, dist: config.distDir })
-    ].filter(Boolean)
+    ].filter(Boolean),
+    optimization: {
+      splitChunks: {
+        chunks: 'all'
+      }
+    }
   }
 
   if (typeof config.webpack === 'function') {
