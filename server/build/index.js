@@ -4,7 +4,7 @@ import uuid from 'uuid'
 import webpack from 'webpack'
 import getConfig from '../config'
 import getBaseWebpackConfig from './webpack'
-import md5File from 'md5-file/promise'
+// import md5File from 'md5-file/promise'
 
 export default async function build (dir, conf = null) {
   const config = getConfig(dir, conf)
@@ -58,13 +58,13 @@ async function writeBuildStats (dir, config) {
   // That's because the "app.js" is not tied to a chunk.
   // It's created by merging a few assets. (commons.js and main.js)
   // So, we need to generate the hash ourself.
-  const assetHashMap = {
-    'app.js': {
-      hash: await md5File(join(dir, config.distDir, 'app.js'))
-    }
-  }
-  const buildStatsPath = join(dir, config.distDir, 'build-stats.json')
-  await fs.writeFile(buildStatsPath, JSON.stringify(assetHashMap), 'utf8')
+  // const assetHashMap = {
+  //   'app.js': {
+  //     hash: await md5File(join(dir, config.distDir, 'app.js'))
+  //   }
+  // }
+  // const buildStatsPath = join(dir, config.distDir, 'build-stats.json')
+  // await fs.writeFile(buildStatsPath, JSON.stringify(assetHashMap), 'utf8')
 }
 
 async function writeBuildId (dir, buildId, config) {
