@@ -1,13 +1,14 @@
-import path, {sep} from 'path'
+// import path, {sep} from 'path'
+import path from 'path'
 import webpack from 'webpack'
 import resolve from 'resolve'
-import UglifyJSPlugin from 'uglifyjs-webpack-plugin'
+// import UglifyJSPlugin from 'uglifyjs-webpack-plugin'
 import CaseSensitivePathPlugin from 'case-sensitive-paths-webpack-plugin'
 import WriteFilePlugin from 'write-file-webpack-plugin'
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin'
 import {getPages} from './webpack/utils'
-import CombineAssetsPlugin from './plugins/combine-assets-plugin'
-import PagesPlugin from './plugins/pages-plugin'
+// import CombineAssetsPlugin from './plugins/combine-assets-plugin'
+// import PagesPlugin from './plugins/pages-plugin'
 import NextJsSsrImportPlugin from './plugins/nextjs-ssr-import'
 import DynamicChunksPlugin from './plugins/dynamic-chunks-plugin'
 import UnlinkFilePlugin from './plugins/unlink-file-plugin'
@@ -108,6 +109,7 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
   let totalPages
 
   let webpackConfig = {
+    mode: dev ? 'development' : 'production',
     devtool: dev ? 'source-map' : false,
     name: isServer ? 'server' : 'client',
     cache: true,
@@ -170,12 +172,20 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
     },
     module: {
       rules: [
+        !isServer && {
+          test: /\.(js|jsx)(\?[^?]*)?$/,
+          loader: 'page-loader',
+          include: [
+            path.join(dir, 'pages'),
+            path.join(nextDir, 'dist', 'pages')
+          ]
+        },
         dev && !isServer && {
           test: /\.(js|jsx)(\?[^?]*)?$/,
           loader: 'hot-self-accept-loader',
           include: [
             path.join(dir, 'pages'),
-            nextPagesDir
+            path.join(nextDir, 'dist', 'pages')
           ]
         },
         {
@@ -209,107 +219,17 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
         useHashIndex: false
       }),
       !dev && new webpack.IgnorePlugin(/react-hot-loader/),
-      !isServer && !dev && new UglifyJSPlugin({
-        exclude: /react\.js/,
-        parallel: true,
-        sourceMap: false,
-        uglifyOptions: {
-          compress: {
-            arrows: false,
-            booleans: false,
-            collapse_vars: false,
-            comparisons: false,
-            computed_props: false,
-            hoist_funs: false,
-            hoist_props: false,
-            hoist_vars: false,
-            if_return: false,
-            inline: false,
-            join_vars: false,
-            keep_infinity: true,
-            loops: false,
-            negate_iife: false,
-            properties: false,
-            reduce_funcs: false,
-            reduce_vars: false,
-            sequences: false,
-            side_effects: false,
-            switches: false,
-            top_retain: false,
-            toplevel: false,
-            typeofs: false,
-            unused: false,
-            conditionals: false,
-            dead_code: true,
-            evaluate: false
-          }
-        }
-      }),
       new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify(dev ? 'development' : 'production')
       }),
-      !isServer && new CombineAssetsPlugin({
-        input: ['manifest.js', 'react.js', 'commons.js', 'main.js'],
-        output: 'app.js'
-      }),
+      // !isServer && new CombineAssetsPlugin({
+      //   input: ['manifest.js', 'react.js', 'commons.js', 'main.js'],
+      //   output: 'app.js'
+      // }),
       !dev && new webpack.optimize.ModuleConcatenationPlugin(),
-      !isServer && new PagesPlugin(),
+      // !isServer && new PagesPlugin(),
       !isServer && new DynamicChunksPlugin(),
-      isServer && new NextJsSsrImportPlugin({ dir, dist: config.distDir }),
-      !isServer && new webpack.optimize.CommonsChunkPlugin({
-        name: `commons`,
-        filename: `commons.js`,
-        minChunks (module, count) {
-          // We need to move react-dom explicitly into common chunks.
-          // Otherwise, if some other page or module uses it, it might
-          // included in that bundle too.
-          if (module.context && module.context.indexOf(`${sep}react${sep}`) >= 0) {
-            return true
-          }
-
-          if (module.context && module.context.indexOf(`${sep}react-dom${sep}`) >= 0) {
-            return true
-          }
-
-          // In the dev we use on-demand-entries.
-          // So, it makes no sense to use commonChunks based on the minChunks count.
-          // Instead, we move all the code in node_modules into each of the pages.
-          if (dev) {
-            return false
-          }
-
-          // If there are one or two pages, only move modules to common if they are
-          // used in all of the pages. Otherwise, move modules used in at-least
-          // 1/2 of the total pages into commons.
-          if (totalPages <= 2) {
-            return count >= totalPages
-          }
-          return count >= totalPages * 0.5
-        }
-      }),
-      !isServer && new webpack.optimize.CommonsChunkPlugin({
-        name: 'react',
-        filename: 'react.js',
-        minChunks (module, count) {
-          if (dev) {
-            return false
-          }
-
-          if (module.resource && module.resource.includes(`${sep}react-dom${sep}`) && count >= 0) {
-            return true
-          }
-
-          if (module.resource && module.resource.includes(`${sep}react${sep}`) && count >= 0) {
-            return true
-          }
-
-          return false
-        }
-      }),
-      !isServer && new webpack.optimize.CommonsChunkPlugin({
-        name: 'manifest',
-        filename: 'manifest.js'
-      })
+      isServer && new NextJsSsrImportPlugin({ dir, dist: config.distDir })
     ].filter(Boolean)
   }
 
