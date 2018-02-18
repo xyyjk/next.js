@@ -1,14 +1,10 @@
-// import path, {sep} from 'path'
 import path from 'path'
 import webpack from 'webpack'
 import resolve from 'resolve'
-// import UglifyJSPlugin from 'uglifyjs-webpack-plugin'
 import CaseSensitivePathPlugin from 'case-sensitive-paths-webpack-plugin'
 import WriteFilePlugin from 'write-file-webpack-plugin'
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin'
 import {getPages} from './webpack/utils'
-// import CombineAssetsPlugin from './plugins/combine-assets-plugin'
-// import PagesPlugin from './plugins/pages-plugin'
 import NextJsSsrImportPlugin from './plugins/nextjs-ssr-import'
 import DynamicChunksPlugin from './plugins/dynamic-chunks-plugin'
 import UnlinkFilePlugin from './plugins/unlink-file-plugin'
@@ -221,19 +217,9 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
       new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify(dev ? 'development' : 'production')
       }),
-      // !isServer && new CombineAssetsPlugin({
-      //   input: ['manifest.js', 'react.js', 'commons.js', 'main.js'],
-      //   output: 'app.js'
-      // }),
-      // !isServer && new PagesPlugin(),
       !isServer && new DynamicChunksPlugin(),
       isServer && new NextJsSsrImportPlugin({ dir, dist: config.distDir })
-    ].filter(Boolean),
-    optimization: {
-      splitChunks: {
-        chunks: 'all'
-      }
-    }
+    ].filter(Boolean)
   }
 
   if (typeof config.webpack === 'function') {
