@@ -218,7 +218,7 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
         'process.env.NODE_ENV': JSON.stringify(dev ? 'development' : 'production')
       }),
       !isServer && new DynamicChunksPlugin(),
-      isServer && new NextJsSsrImportPlugin({ dir, dist: config.distDir })
+      isServer && new NextJsSsrImportPlugin()
     ].filter(Boolean)
   }
 
