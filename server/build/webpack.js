@@ -3,6 +3,7 @@ import webpack from 'webpack'
 import resolve from 'resolve'
 import CaseSensitivePathPlugin from 'case-sensitive-paths-webpack-plugin'
 import WriteFilePlugin from 'write-file-webpack-plugin'
+import AssetMapPlugin from 'asset-map-webpack-plugin'
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin'
 import {getPages} from './webpack/utils'
 import NextJsSsrImportPlugin from './plugins/nextjs-ssr-import'
@@ -62,6 +63,9 @@ function externalsConfig (dir, isServer) {
   }
 
   externals.push((context, request, callback) => {
+    if (request === '../next-manifest.json') {
+      return callback(null, `commonjs ${request}`)
+    }
     resolve(request, { basedir: dir, preserveSymlinks: true }, (err, res) => {
       if (err) {
         return callback()
@@ -87,6 +91,30 @@ function externalsConfig (dir, isServer) {
   return externals
 }
 
+function generateChunkConfig ({dev}) {
+  if (dev) {
+    return {
+      cacheGroups: {
+        commons: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all'
+        }
+      }
+    }
+  }
+
+  return {
+    cacheGroups: {
+      commons: {
+        name: 'static/commons',
+        chunks: 'initial',
+        minChunks: 2
+      }
+    }
+  }
+}
+
 export default async function getBaseWebpackConfig (dir, {dev = false, isServer = false, buildId, config}) {
   const babelLoaderOptions = babelConfig(dir, {dev, isServer})
 
@@ -108,7 +136,8 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
     mode: dev ? 'development' : 'production',
     devtool: dev ? 'source-map' : false,
     name: isServer ? 'server' : 'client',
-    cache: true,
+    cache: dev,
+    recordsPath: path.resolve(dir, './records.json'),
     target: isServer ? 'node' : 'web',
     externals: externalsConfig(dir, isServer),
     context: dir,
@@ -117,7 +146,7 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
       totalPages = Object.keys(pages).length
       const mainJS = require.resolve(`../../client/next${dev ? '-dev' : ''}`)
       const clientConfig = !isServer ? {
-        'main.js': [
+        'static/main': [
           dev && !isServer && path.join(__dirname, '..', '..', 'client', 'webpack-hot-middleware-client'),
           dev && !isServer && path.join(__dirname, '..', '..', 'client', 'on-demand-entries-client'),
           mainJS
@@ -130,7 +159,15 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
     },
     output: {
       path: path.join(dir, config.distDir, isServer ? 'dist' : ''), // server compilation goes to `.next/dist`
-      filename: '[name]',
+      publicPath: '/_next/',
+      filename (context) {
+        const {name} = context.chunk
+        if (name === 'static/main') {
+          return '[name]-[chunkhash].js'
+        }
+
+        return '[name]'
+      },
       libraryTarget: 'commonjs2',
       // This saves chunks with the name given via require.ensure()
       chunkFilename: '[name]-[chunkhash].js',
@@ -166,6 +203,10 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
         ...nodePathList // Support for NODE_PATH environment variable
       ]
     },
+    optimization: {
+      splitChunks: generateChunkConfig({dev}),
+      minimize: !isServer && !dev
+    },
     module: {
       rules: [
         !isServer && {
@@ -193,6 +234,8 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
       ].filter(Boolean)
     },
     plugins: [
+      !isServer && new AssetMapPlugin('dist/bundles/next-manifest.json'),
+      new webpack.ProgressPlugin(),
       new webpack.IgnorePlugin(/(precomputed)/, /node_modules.+(elliptic)/),
       dev && new webpack.NoEmitOnErrorsPlugin(),
       dev && !isServer && new FriendlyErrorsWebpackPlugin(),
@@ -214,9 +257,6 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
         useHashIndex: false
       }),
       !dev && new webpack.IgnorePlugin(/react-hot-loader/),
-      new webpack.DefinePlugin({
-        'process.env.NODE_ENV': JSON.stringify(dev ? 'development' : 'production')
-      }),
       !isServer && new DynamicChunksPlugin(),
       isServer && new NextJsSsrImportPlugin()
     ].filter(Boolean)

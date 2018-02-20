@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import htmlescape from 'htmlescape'
 import flush from 'styled-jsx/server'
 
+const manifest = require('../next-manifest.json') // this path is excluded using `excludes` in the webpack config
+
 const Fragment = React.Fragment || function Fragment ({ children }) {
   return <div>{children}</div>
 }
@@ -54,19 +56,20 @@ export class Head extends Component {
   }
 
   getPreloadMainLinks () {
-    const { dev } = this.context._documentProps
-    if (dev) {
-      return [
-        this.getChunkPreloadLink('manifest.js'),
-        this.getChunkPreloadLink('commons.js'),
-        this.getChunkPreloadLink('main.js')
-      ]
-    }
+    return []
+    // const { dev } = this.context._documentProps
+    // if (dev) {
+    //   return [
+    //     // this.getChunkPreloadLink('manifest.js'),
+    //     // this.getChunkPreloadLink('commons.js'),
+    //     // this.getChunkPreloadLink('main.js')
+    //   ]
+    // }
 
-    // In the production mode, we have a single asset with all the JS content.
-    return [
-      this.getChunkPreloadLink('app.js')
-    ]
+    // // In the production mode, we have a single asset with all the JS content.
+    // return [
+    //   // this.getChunkPreloadLink('app.js')
+    // ]
   }
 
   getPreloadDynamicChunks () {
@@ -126,32 +129,38 @@ export class NextScript extends Component {
 
   getChunkScript (filename, additionalProps = {}) {
     const { __NEXT_DATA__ } = this.context._documentProps
-    let { buildStats, assetPrefix, buildId } = __NEXT_DATA__
-    const hash = buildStats ? buildStats[filename].hash : buildId
+    // let { buildStats, assetPrefix, buildId } = __NEXT_DATA__
+    let { assetPrefix } = __NEXT_DATA__
+    // const hash = buildStats ? buildStats[filename].hash : buildId
 
-    return (
+    return manifest.chunks[filename].map((item) => (
       <script
         key={filename}
         type='text/javascript'
-        src={`${assetPrefix}/_next/${hash}/${filename}`}
+        src={`${assetPrefix}${item}`}
         {...additionalProps}
       />
-    )
+    ))
   }
 
   getScripts () {
-    const { dev } = this.context._documentProps
-    if (dev) {
-      return [
-        this.getChunkScript('manifest.js'),
-        this.getChunkScript('commons.js'),
-        this.getChunkScript('main.js')
-      ]
-    }
+    // const { dev } = this.context._documentProps
+    // if (dev) {
+    //   return [
+    //     this.getChunkScript('manifest.js'),
+    //     this.getChunkScript('commons.js'),
+    //     this.getChunkScript('main.js')
+    //   ]
+    // }
+
+    return [
+      ...this.getChunkScript('static/main'),
+      ...this.getChunkScript('static/commons')
+    ]
 
     // In the production mode, we have a single asset with all the JS content.
     // So, we can load the script with async
-    return [this.getChunkScript('app.js', { async: true })]
+    // return [this.getChunkScript('app.js', { async: true })]
   }
 
   getDynamicChunks () {
