@@ -136,7 +136,6 @@ export class NextScript extends Component {
     return manifest.chunks[filename].map((item) => (
       <script
         key={filename}
-        type='text/javascript'
         src={`${assetPrefix}${item}`}
         {...additionalProps}
       />
@@ -172,7 +171,6 @@ export class NextScript extends Component {
           <script
             async
             key={chunk}
-            type='text/javascript'
             src={`${assetPrefix}/_next/webpack/chunks/${chunk}`}
           />
         ))}
@@ -213,8 +211,8 @@ export class NextScript extends Component {
           `}
         `
       }} />}
-      {page !== '/_error' && <script async id={`__NEXT_PAGE__${pathname}`} type='text/javascript' src={`${assetPrefix}/_next/${buildId}/page${pagePathname}`} />}
-      <script async id={`__NEXT_PAGE__/_error`} type='text/javascript' src={`${assetPrefix}/_next/${buildId}/page/_error.js`} />
+      {page !== '/_error' && <script async id={`__NEXT_PAGE__${pathname}`} src={`${assetPrefix}/_next/${buildId}/page${pagePathname}`} />}
+      <script async id={`__NEXT_PAGE__/_error`} src={`${assetPrefix}/_next/${buildId}/page/_error.js`} />
       {staticMarkup ? null : this.getDynamicChunks()}
       {staticMarkup ? null : this.getScripts()}
     </Fragment>

@@ -491,7 +491,6 @@ Here's a list of supported events:
 - `onRouteChangeComplete(url)` - Fires when a route changed completely
 - `onRouteChangeError(err, url)` - Fires when there's an error when changing routes
 - `onBeforeHistoryChange(url)` - Fires just before changing the browser's history
-- `onAppUpdated(nextRoute)` - Fires when switching pages and there's a new version of the app
 
 > Here `url` is the URL shown in the browser. If you call `Router.push(url, as)` (or similar), then the value of `url` will be `as`.
 
@@ -516,17 +515,6 @@ Router.onRouteChangeError = (err, url) => {
   if (err.cancelled) {
     console.log(`Route to ${url} was cancelled!`)
   }
-}
-```
-
-If you change a route while in between a new deployment, we can't navigate the app via client side. We need to do a full browser navigation. We do it automatically for you.
-
-But you can customize that via `Route.onAppUpdated` event like this:
-
-```js
-Router.onAppUpdated = nextUrl => {
-  // persist the local state
-  location.href = nextUrl
 }
 ```
 
@@ -608,7 +596,7 @@ The above `router` object comes with an API similar to [`next/router`](#imperati
 
 ### Prefetching Pages
 
-(This is a production only feature)
+⚠️ This is a production only feature ⚠️
 
 <p><details>
   <summary><b>Examples</b></summary>
@@ -1006,6 +994,36 @@ Note: `next.config.js` is a regular Node.js module, not a JSON file. It gets use
 // next.config.js
 module.exports = {
   /* config options here */
+}
+```
+
+Or use a function:
+
+```js
+module.exports = (phase, {defaultConfig}){
+  // 
+  // https://github.com/zeit/
+  return {
+    /* config options here */
+  }
+}
+```
+
+`phase` is the current context in which the configuration is loaded. You can see all phases here: [contants](./lib/constants.js)
+Phases can be imported from `next/constants`:
+
+```js
+const {PHASE_DEVELOPMENT_SERVER} = require('next/constants')
+module.exports = (phase, {defaultConfig}){
+  if(phase === PHASE_DEVELOPMENT_SERVER) {
+    return {
+      /* development only config options here */
+    }
+  }
+
+  return {
+    /* config options for all phases except development here */
+  }
 }
 ```
 
