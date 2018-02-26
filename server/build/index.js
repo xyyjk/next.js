@@ -24,9 +24,9 @@ export default async function build (dir, conf = null) {
       getBaseWebpackConfig(dir, { buildId, isServer: true, config })
     ])
 
-    await runCompiler(configs)
+    const stats = await runCompiler(configs)
 
-    await writeBuildStats(dir, config)
+    await writeBuildStats(stats, {dir, config})
     await writeBuildId(dir, buildId, config)
   } catch (err) {
     console.error(`> Failed to build`)
@@ -54,18 +54,22 @@ function runCompiler (compiler) {
   })
 }
 
-async function writeBuildStats (dir, config) {
-  // Here we can't use hashes in webpack chunks.
-  // That's because the "app.js" is not tied to a chunk.
-  // It's created by merging a few assets. (commons.js and main.js)
-  // So, we need to generate the hash ourself.
-  // const assetHashMap = {
-  //   'app.js': {
-  //     hash: await md5File(join(dir, config.distDir, 'app.js'))
-  //   }
-  // }
-  // const buildStatsPath = join(dir, config.distDir, 'build-stats.json')
-  // await fs.writeFile(buildStatsPath, JSON.stringify(assetHashMap), 'utf8')
+// Generates build-stats.json containing a mapping of entrypoint => output path
+async function writeBuildStats (stats, {dir, config}) {
+  const clientStats = stats.children.find(stat => stat.name === 'client')
+  const assetMap = {}
+
+  for (const chunk of clientStats.chunks) {
+    if (!chunk.names || !chunk.files) {
+      continue
+    }
+
+    const [name] = chunk.names // names is an array with 1 value
+
+    assetMap[name] = chunk.files
+  }
+  const buildStatsPath = join(dir, config.distDir, 'build-stats.json')
+  await fs.writeFile(buildStatsPath, JSON.stringify(assetMap), 'utf8')
 }
 
 async function writeBuildId (dir, buildId, config) {

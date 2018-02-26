@@ -3,7 +3,6 @@ import webpack from 'webpack'
 import resolve from 'resolve'
 import CaseSensitivePathPlugin from 'case-sensitive-paths-webpack-plugin'
 import WriteFilePlugin from 'write-file-webpack-plugin'
-import AssetMapPlugin from 'asset-map-webpack-plugin'
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin'
 import {getPages} from './webpack/utils'
 import NextJsSsrImportPlugin from './plugins/nextjs-ssr-import'
@@ -234,8 +233,6 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
       ].filter(Boolean)
     },
     plugins: [
-      !isServer && new AssetMapPlugin('dist/bundles/next-manifest.json'),
-      new webpack.ProgressPlugin(),
       new webpack.IgnorePlugin(/(precomputed)/, /node_modules.+(elliptic)/),
       dev && new webpack.NoEmitOnErrorsPlugin(),
       dev && !isServer && new FriendlyErrorsWebpackPlugin(),

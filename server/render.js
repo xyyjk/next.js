@@ -107,7 +107,6 @@ async function doRender (req, res, pathname, query, {
       pathname, // the requested path
       query,
       buildId,
-      buildStats,
       assetPrefix,
       nextExport,
       err: (err) ? serializeError(dev, err) : null
@@ -115,6 +114,7 @@ async function doRender (req, res, pathname, query, {
     dev,
     dir,
     staticMarkup,
+    buildStats,
     ...docProps
   })
 
