@@ -24,9 +24,8 @@ export default async function build (dir, conf = null) {
       getBaseWebpackConfig(dir, { buildId, isServer: true, config })
     ])
 
-    const stats = await runCompiler(configs)
+    await runCompiler(configs)
 
-    await writeBuildStats(stats, {dir, config})
     await writeBuildId(dir, buildId, config)
   } catch (err) {
     console.error(`> Failed to build`)
@@ -52,24 +51,6 @@ function runCompiler (compiler) {
       resolve(jsonStats)
     })
   })
-}
-
-// Generates build-stats.json containing a mapping of entrypoint => output path
-async function writeBuildStats (stats, {dir, config}) {
-  const clientStats = stats.children.find(stat => stat.name === 'client')
-  const assetMap = {}
-
-  for (const chunk of clientStats.chunks) {
-    if (!chunk.names || !chunk.files) {
-      continue
-    }
-
-    const [name] = chunk.names // names is an array with 1 value
-
-    assetMap[name] = chunk.files
-  }
-  const buildStatsPath = join(dir, config.distDir, 'build-stats.json')
-  await fs.writeFile(buildStatsPath, JSON.stringify(assetMap), 'utf8')
 }
 
 async function writeBuildId (dir, buildId, config) {

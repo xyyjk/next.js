@@ -149,7 +149,7 @@ export default class HotReloader {
       )
 
       const failedChunkNames = new Set(compilation.errors
-      .map((e) => e.module.reasons)
+        .map((e) => e && e.module ? e.module.reasons : e)
       .reduce((a, b) => a.concat(b), [])
       .map((r) => r.module.chunks)
       .reduce((a, b) => a.concat(b), [])
@@ -257,13 +257,20 @@ export default class HotReloader {
         const { compiler, errors } = this.stats.compilation
 
         for (const err of errors) {
-          for (const r of err.module.reasons) {
-            for (const c of r.module.chunks) {
-              // get the path of the bundle file
-              const path = join(compiler.outputPath, c.name)
-              const errors = this.compilationErrors.get(path) || []
-              this.compilationErrors.set(path, errors.concat([err]))
+          if (err.module) {
+            for (const r of err.module.reasons) {
+              for (const c of r.module.chunks) {
+                // get the path of the bundle file
+                const path = join(compiler.outputPath, c.name)
+                const errors = this.compilationErrors.get(path) || []
+                this.compilationErrors.set(path, errors.concat([err]))
+              }
             }
+          } else {
+            // If the error format is different (in case of typescript), just output the error.
+            const path = join(compiler.outputPath, err.message)
+            const errors = this.compilationErrors.get(path) || []
+            this.compilationErrors.set(path, errors.concat([err.message]))
           }
         }
       }

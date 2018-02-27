@@ -48,7 +48,6 @@ export default class Server {
       console.error(`> Could not find a valid build in the '${this.dist}' directory! Try building your app with 'next build' before starting the server.`)
       process.exit(1)
     }
-    this.buildStats = !dev ? require(join(this.dir, this.dist, 'build-stats.json')) : null
     this.buildId = !dev ? this.readBuildId() : '-'
     this.renderOpts = {
       dev,
@@ -56,7 +55,6 @@ export default class Server {
       dir: this.dir,
       dist: this.dist,
       hotReloader: this.hotReloader,
-      buildStats: this.buildStats,
       buildId: this.buildId,
       availableChunks: dev ? {} : getAvailableChunks(this.dir, this.dist)
     }

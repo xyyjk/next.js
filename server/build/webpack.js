@@ -5,9 +5,13 @@ import CaseSensitivePathPlugin from 'case-sensitive-paths-webpack-plugin'
 import WriteFilePlugin from 'write-file-webpack-plugin'
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin'
 import {getPages} from './webpack/utils'
+import {
+  IS_BUNDLED_PAGE
+} from '../utils'
 import NextJsSsrImportPlugin from './plugins/nextjs-ssr-import'
 import DynamicChunksPlugin from './plugins/dynamic-chunks-plugin'
 import UnlinkFilePlugin from './plugins/unlink-file-plugin'
+import BuildStatsPlugin from './plugins/build-stats'
 import findBabelConfig from './babel/find-config'
 
 const nextDir = path.join(__dirname, '..', '..', '..')
@@ -90,13 +94,17 @@ function externalsConfig (dir, isServer) {
   return externals
 }
 
-function generateChunkConfig ({dev}) {
+function generateChunkConfig ({dev, isServer}) {
+  if (isServer) {
+    return {}
+  }
+
   if (dev) {
     return {
       cacheGroups: {
         commons: {
           test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
+          name: 'static/vendors',
           chunks: 'all'
         }
       }
@@ -159,17 +167,22 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
     output: {
       path: path.join(dir, config.distDir, isServer ? 'dist' : ''), // server compilation goes to `.next/dist`
       publicPath: '/_next/',
-      filename (context) {
-        const {name} = context.chunk
-        if (name === 'static/main') {
-          return '[name]-[chunkhash].js'
-        }
-
-        return '[name]'
-      },
+      filename: '[name]',
       libraryTarget: 'commonjs2',
       // This saves chunks with the name given via require.ensure()
-      chunkFilename: '[name]-[chunkhash].js',
+      chunkFilename: (context) => {
+        if (isServer) {
+          return '[name]'
+        }
+
+        const {name} = context.chunk
+
+        if (IS_BUNDLED_PAGE.test(name)) {
+          return '[name]'
+        }
+
+        return '[name]-[chunkhash].js'
+      },
       strictModuleExceptionHandling: true,
       devtoolModuleFilenameTemplate: '[absolute-resource-path]'
     },
@@ -203,7 +216,7 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
       ]
     },
     optimization: {
-      splitChunks: generateChunkConfig({dev}),
+      splitChunks: generateChunkConfig({dev, isServer}),
       minimize: !isServer && !dev
     },
     module: {
@@ -254,6 +267,7 @@ export default async function getBaseWebpackConfig (dir, {dev = false, isServer 
         useHashIndex: false
       }),
       !dev && new webpack.IgnorePlugin(/react-hot-loader/),
+      !isServer && new BuildStatsPlugin(),
       !isServer && new DynamicChunksPlugin(),
       isServer && new NextJsSsrImportPlugin()
     ].filter(Boolean)

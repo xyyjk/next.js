@@ -37,7 +37,6 @@ async function doRender (req, res, pathname, query, {
   err,
   page,
   buildId,
-  buildStats,
   hotReloader,
   assetPrefix,
   availableChunks,
@@ -52,6 +51,8 @@ async function doRender (req, res, pathname, query, {
   if (hotReloader) { // In dev mode we use on demand entries to compile the page before rendering
     await ensurePage(page, { dir, hotReloader })
   }
+
+  const buildStats = require(join(dir, dist, 'build-stats.json'))
 
   const documentPath = join(dir, dist, 'dist', 'bundles', 'pages', '_document')
 

@@ -9,6 +9,7 @@ const Fragment = React.Fragment || function Fragment ({ children }) {
 
 function getFilesForAsset (instance, entry) {
   const {buildStats} = instance.context._documentProps
+
   if (!buildStats[entry]) {
     return false
   }
@@ -149,8 +150,11 @@ export class NextScript extends Component {
   }
 
   getChunkScript (entry, additionalProps = {}) {
-    // const hash = buildStats ? buildStats[filename].hash : buildId
     const files = this.getFilesForAsset(entry)
+
+    if (!files) {
+      return []
+    }
 
     return files.map((path) => (
       <script
@@ -163,8 +167,10 @@ export class NextScript extends Component {
 
   getScripts () {
     return [
+      ...this.getChunkScript('static/runtime'),
       ...this.getChunkScript('static/main'),
-      ...this.getChunkScript('static/commons')
+      ...this.getChunkScript('static/commons'),
+      ...this.getChunkScript('static/vendors') // dev only
     ]
   }
 
